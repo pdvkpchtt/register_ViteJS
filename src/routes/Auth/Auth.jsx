@@ -8,6 +8,7 @@ import LoadingIndicator from "../../ui/controls/LoadingIndicator";
 import BlockSettingsForm from "./settingsForm/BlockSettingsForm";
 
 import useSocket from "../../hooks/useSocket";
+import { parseJsonResponse } from "../../utils/fetchJson";
 
 const Auth = ({ setConsoleLogs = () => {} }) => {
   const [file, setFile] = useState(null);
@@ -43,7 +44,8 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
       });
 
       if (response.ok) {
-        const { logs } = await response.json();
+        const data = await parseJsonResponse(response);
+        const { logs } = data || {};
         if (logs?.length > 0) {
           console.log(`📥 Загружено ${logs.length} сохранённых логов`);
           // 🔥 Заменяем текущие логи на загруженные (или объединяем)
@@ -141,7 +143,7 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
           }
         );
         if (response.ok) {
-          const data = await response.json();
+          const data = await parseJsonResponse(response);
           setIsProcessing(data.isProcessing);
           if (data.stats) setProcessStats(data.stats);
           console.log("📊 Статус процесса:", data);
@@ -168,7 +170,7 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
         ]);
 
         if (settingsRes.ok) {
-          const { settings } = await settingsRes.json();
+          const { settings } = (await parseJsonResponse(settingsRes)) || {};
           if (settings) {
             setSettingsForm(settings);
             setConsoleLogs((prev) => [
@@ -183,7 +185,7 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
         }
 
         if (infoRes.ok) {
-          const infoData = await infoRes.json();
+          const infoData = await parseJsonResponse(infoRes);
           if (infoData?.file) {
             setIsLoading(true);
             const fileRes = await fetch(
@@ -268,8 +270,8 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
         method: "DELETE",
         credentials: "include",
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Ошибка удаления");
+      const result = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(result?.error || "Ошибка удаления");
       setFile(null);
       setTableData([]);
       setError(null);
@@ -299,8 +301,8 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
         body: formData,
         credentials: "include",
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Ошибка загрузки");
+      const result = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(result?.error || "Ошибка загрузки");
       setConsoleLogs((prev) => [
         ...prev,
         {
@@ -345,8 +347,8 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
       }
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Ошибка запуска");
+        const err = await parseJsonResponse(response);
+        throw new Error(err?.error || "Ошибка запуска");
       }
 
       // Ответ придёт после завершения, но прогресс будем получать через сокеты
@@ -378,8 +380,8 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
       );
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Ошибка остановки");
+        const err = await parseJsonResponse(response);
+        throw new Error(err?.error || "Ошибка остановки");
       }
 
       setConsoleLogs((prev) => [
