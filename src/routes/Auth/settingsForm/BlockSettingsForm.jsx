@@ -118,11 +118,18 @@ const BlockSettingsForm = ({
             className="flex-1"
           />
         ) : (
-          <Button
-            text="🛑 Стоп"
-            onClick={onStop}
-            className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30"
-          />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const fn = onStop;
+              if (typeof fn === "function") fn();
+            }}
+            className="flex-1 w-full py-[16px] rounded-[12px] font-medium text-[16px] cursor-pointer transition-opacity bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:opacity-90 active:opacity-70"
+          >
+            🛑 Стоп
+          </button>
         )}
       </div>
     </div>

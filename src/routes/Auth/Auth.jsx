@@ -380,10 +380,8 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
     }
   };
 
-  // 🔥 Остановка обработки
+  // 🔥 Остановка обработки (истина на сервере — не полагаемся только на isProcessing в state)
   const handleStopProcessing = async () => {
-    if (!isProcessing) return;
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_MAIN_SERVER}/parse-stream/stop`,
@@ -393,21 +391,32 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
         }
       );
 
-      if (!response.ok) {
-        const err = await parseJsonResponse(response);
-        throw new Error(err?.error || "Ошибка остановки");
+      const body = await parseJsonResponse(response);
+
+      if (response.ok) {
+        setIsProcessing(false);
+        if (body?.stats) setProcessStats(body.stats);
+        await fetchParseStatus();
+        return;
       }
 
-      setConsoleLogs((prev) => [
-        ...prev,
-        {
-          level: "info",
-          message: "🛑 Остановка процесса...",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      if (response.status === 400) {
+        await fetchParseStatus();
+        setConsoleLogs((prev) => [
+          ...prev,
+          {
+            level: "warn",
+            message: body?.error || "Нет активного процесса на сервере",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        return;
+      }
+
+      throw new Error(body?.error || "Ошибка остановки");
     } catch (err) {
       console.error("Ошибка остановки:", err);
+      await fetchParseStatus();
       setConsoleLogs((prev) => [
         ...prev,
         {
