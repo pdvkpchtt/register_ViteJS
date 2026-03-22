@@ -132,29 +132,41 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
     };
   }, [isConnected, on]);
 
-  // 🔥 Проверка статуса процесса при загрузке (для восстановления после перезагрузки)
-  useEffect(() => {
-    const checkProcessStatus = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_MAIN_SERVER}/parse-stream/status`,
-          {
-            credentials: "include",
-          }
-        );
-        if (response.ok) {
-          const data = await parseJsonResponse(response);
-          setIsProcessing(data.isProcessing);
-          if (data.stats) setProcessStats(data.stats);
-          console.log("📊 Статус процесса:", data);
+  const fetchParseStatus = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_MAIN_SERVER}/parse-stream/status`,
+        {
+          credentials: "include",
         }
-      } catch (err) {
-        console.warn("⚠️ Не удалось проверить статус процесса:", err);
+      );
+      if (response.ok) {
+        const data = await parseJsonResponse(response);
+        setIsProcessing(Boolean(data.isProcessing));
+        if (data.stats) setProcessStats(data.stats);
+        return data;
       }
-    };
+    } catch (err) {
+      console.warn("⚠️ Не удалось проверить статус процесса:", err);
+    }
+    return null;
+  };
 
-    checkProcessStatus();
+  // 🔥 Статус при загрузке (прогресс-бар и isProcessing после F5)
+  useEffect(() => {
+    fetchParseStatus().then((data) => {
+      if (data) console.log("📊 Статус процесса:", data);
+    });
   }, []);
+
+  // 🔥 Пока идёт обработка — подтягиваем прогресс с сервера (новый сокет / другая вкладка)
+  useEffect(() => {
+    if (!isProcessing) return;
+    const id = setInterval(() => {
+      fetchParseStatus();
+    }, 2000);
+    return () => clearInterval(id);
+  }, [isProcessing]);
 
   // 🔥 Загрузка файла и настроек при инициализации
   useEffect(() => {
@@ -341,17 +353,19 @@ const Auth = ({ setConsoleLogs = () => {} }) => {
       );
 
       if (response.status === 409) {
-        // Процесс уже запущен — просто обновляем UI
         setIsProcessing(true);
+        await fetchParseStatus();
         return;
       }
 
-      if (!response.ok) {
-        const err = await parseJsonResponse(response);
-        throw new Error(err?.error || "Ошибка запуска");
+      if (response.status === 202 || response.ok) {
+        setIsProcessing(true);
+        await fetchParseStatus();
+        return;
       }
 
-      // Ответ придёт после завершения, но прогресс будем получать через сокеты
+      const err = await parseJsonResponse(response);
+      throw new Error(err?.error || "Ошибка запуска");
     } catch (err) {
       console.error("Ошибка запуска:", err);
       setError(err.message || "Не удалось запустить обработку");
