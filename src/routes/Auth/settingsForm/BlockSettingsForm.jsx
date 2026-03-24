@@ -75,10 +75,21 @@ const BlockSettingsForm = ({
         <InputText
           type="number"
           min={1}
-          placeholder="Пауза после регистрации (мин)"
+          placeholder="Пауза, минут (минимум)"
           value={settingsForm?.duration || ""}
           onChange={(duration) =>
             setSettingsForm({ ...settingsForm, duration })
+          }
+          disabled={isProcessing || loading}
+        />
+
+        <InputText
+          type="number"
+          min={1}
+          placeholder="Пауза, минут (максимум)"
+          value={settingsForm?.durationMax || ""}
+          onChange={(durationMax) =>
+            setSettingsForm({ ...settingsForm, durationMax })
           }
           disabled={isProcessing || loading}
         />
