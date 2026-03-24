@@ -3,6 +3,54 @@ const DataTable = ({ data, onClear }) => {
 
   const headers = Object.keys(data[0]);
 
+  function parseExcelDate(value) {
+    if (!value) return null;
+
+    // Если уже строка с пробелами — возвращаем как есть
+    if (typeof value === "string" && /\d+\s+\d+\s+\d+/.test(value)) {
+      return value.trim();
+    }
+
+    // Если число (серийный номер даты Excel)
+    if (typeof value === "number" && value > 1000 && value < 100000) {
+      try {
+        // Excel epoch: 30 Dec 1899, но с багом високосного 1900 года
+        let days = Math.floor(value);
+        let msInDay = 86400000;
+
+        // Базовая дата + дни
+        let date = new Date(Date.UTC(1899, 11, 30));
+        date.setUTCDate(date.getUTCDate() + days);
+
+        // Исправление бага: Excel считает 1900 високосным, но это не так
+        // Все даты >= 60 (после 28.02.1900) нужно сдвинуть на 1 день назад
+        if (value >= 60) {
+          date.setUTCDate(date.getUTCDate() - 1);
+        }
+
+        // Форматируем: "28 7 2002"
+        const day = date.getUTCDate();
+        const month = date.getUTCMonth() + 1; // 0-based
+        const year = date.getUTCFullYear();
+
+        return `${day} ${month} ${year}`;
+      } catch (e) {
+        console.warn(`⚠️ Не удалось распарсить дату ${value}: ${e.message}`);
+        return null;
+      }
+    }
+
+    // Если строка в другом формате — пробуем распарсить
+    if (typeof value === "string") {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return `${date.getDate()} ${date.getMonth() + 1} ${date.getFullYear()}`;
+      }
+    }
+
+    return String(value).trim();
+  }
+
   return (
     <div className="w-full mt-[24px] animate-fade-in">
       {/* Заголовок таблицы с кнопкой очистки */}
@@ -76,7 +124,9 @@ const DataTable = ({ data, onClear }) => {
                       "
                     >
                       {row[header] !== null && row[header] !== undefined
-                        ? String(row[header])
+                        ? header === "Дата рождения"
+                          ? parseExcelDate(row[header] + 1)
+                          : String(row[header])
                         : "-"}
                     </td>
                   ))}
