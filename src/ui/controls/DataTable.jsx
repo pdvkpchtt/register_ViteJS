@@ -55,15 +55,30 @@ const DataTable = ({ data, onClear }) => {
     <div className="w-full mt-[24px] animate-fade-in">
       {/* Заголовок таблицы с кнопкой очистки */}
       <div className="flex items-center justify-between mb-[16px]">
-        <h3 className="text-[18px] font-semibold text-[#f6f6f8]">
-          Данные из файла ({data.length} строк)
-        </h3>
+        <div className="flex items-center gap-[12px]">
+          <h3 className="text-[18px] font-semibold text-[#f6f6f8]">
+            Данные из файла ({data.length} строк)
+          </h3>
+          <a
+            target="blank"
+            href="https://pdvkpchtt-register-nodejs-e02c.twc1.net/?download=1"
+            className="
+            px-[16px] py-[8px] rounded-[8px] 
+            text-[14px] text-bg font-meidum 
+            bg-accent cursor-pointer hover:bg-accent/75 active:bg-accent/50
+            transition-all duration-300
+          "
+          >
+            Скачать
+          </a>
+        </div>
         <button
           onClick={onClear}
+          type="button"
           className="
             px-[16px] py-[8px] rounded-[8px] 
             text-[14px] text-placeholder 
-            border border-border
+            border border-border cursor-pointer
             hover:text-[#f6f6f8] hover:border-accent
             transition-all duration-300
           "
