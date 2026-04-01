@@ -61,7 +61,7 @@ const DataTable = ({ data, onClear }) => {
           </h3>
           <a
             target="blank"
-            href="https://pdvkpchtt-register-nodejs-e02c.twc1.net/?download=1"
+            href={`${import.meta.env.VITE_MAIN_SERVER}/?download=1`}
             className="
             px-[16px] py-[8px] rounded-[8px] 
             text-[14px] text-bg font-meidum 
